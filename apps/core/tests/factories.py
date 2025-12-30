@@ -5,7 +5,7 @@ import factory
 from factory.django import DjangoModelFactory
 from faker import Faker
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+from django.utils import timezone as django_timezone
 from django.utils.text import slugify
 
 User = get_user_model()
@@ -28,7 +28,7 @@ class UserFactory(DjangoModelFactory):
     timezone = 'UTC'
     is_active = True
     is_verified = True
-    last_seen = factory.LazyFunction(timezone.now)
+    last_seen = factory.LazyFunction(django_timezone.now)
     
     @factory.post_generation
     def password(obj, create, extracted, **kwargs):
