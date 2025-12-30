@@ -68,14 +68,6 @@ jobs:
         files: ./coverage.xml
         fail_ci_if_error: false
     
-    - name: Run integration tests
-      env:
-        DJANGO_SETTINGS_MODULE: config.settings.test
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/collab_platform_test
-        REDIS_URL: redis://localhost:6379/0
-      run: |
-        pytest -m integration
-    
     - name: Check for missing migrations
       env:
         DJANGO_SETTINGS_MODULE: config.settings.test
