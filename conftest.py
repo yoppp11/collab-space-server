@@ -35,28 +35,24 @@ def api_client():
 
 # User fixtures
 @pytest.fixture
-@pytest.mark.django_db
 def user(db):
     """Create a regular user."""
     return UserFactory()
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def admin_user(db):
     """Create an admin/superuser."""
     return SuperUserFactory()
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def user_with_password(db):
     """Create a user with a known password."""
     return UserFactory(password='testpass123')
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def multiple_users(db):
     """Create multiple users."""
     return UserFactory.create_batch(5)
@@ -64,14 +60,12 @@ def multiple_users(db):
 
 # Workspace fixtures
 @pytest.fixture
-@pytest.mark.django_db
 def workspace(db, user):
     """Create a workspace owned by user."""
     return WorkspaceFactory(owner=user)
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def workspace_with_members(db, workspace):
     """Create a workspace with multiple members."""
     WorkspaceMembershipFactory.create_batch(3, workspace=workspace)
@@ -79,14 +73,12 @@ def workspace_with_members(db, workspace):
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def board(db, workspace):
     """Create a board in a workspace."""
     return BoardFactory(workspace=workspace)
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def multiple_workspaces(db, user):
     """Create multiple workspaces."""
     return WorkspaceFactory.create_batch(3, owner=user)
@@ -94,14 +86,12 @@ def multiple_workspaces(db, user):
 
 # Document fixtures
 @pytest.fixture
-@pytest.mark.django_db
 def document(db, workspace, user):
     """Create a document."""
     return DocumentFactory(workspace=workspace, created_by=user)
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def document_with_blocks(db, document):
     """Create a document with blocks."""
     BlockFactory.create_batch(5, document=document)
@@ -109,7 +99,6 @@ def document_with_blocks(db, document):
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def comment(db, document, user):
     """Create a comment on a document."""
     return CommentFactory(document=document, author=user)
@@ -117,14 +106,12 @@ def comment(db, document, user):
 
 # Notification fixtures
 @pytest.fixture
-@pytest.mark.django_db
 def notification(db, user):
     """Create a notification for a user."""
     return NotificationFactory(recipient=user)
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def multiple_notifications(db, user):
     """Create multiple notifications."""
     return NotificationFactory.create_batch(5, recipient=user)

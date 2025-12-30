@@ -10,7 +10,6 @@ from apps.collaboration.consumers import DocumentConsumer
 
 
 @pytest.fixture
-@pytest.mark.django_db
 def websocket_communicator(db, user, document):
     """Create a WebSocket communicator for testing."""
     communicator = WebsocketCommunicator(
