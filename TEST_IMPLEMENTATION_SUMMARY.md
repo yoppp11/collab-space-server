@@ -115,8 +115,9 @@ Updated `requirements.txt` with testing frameworks:
 - factory-boy>=3.3.0
 - faker>=20.0.0
 - pytest-env>=1.1.0
-- channels-testing>=0.1.0
 - freezegun>=1.2.0
+
+**Note**: Django Channels testing utilities are included in the `channels` package itself (no separate `channels-testing` package needed).
 
 ## Test Statistics
 

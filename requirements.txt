@@ -58,7 +58,6 @@ pytest-mock>=3.11.0
 factory-boy>=3.3.0
 faker>=20.0.0
 pytest-env>=1.1.0
-channels-testing>=0.1.0
 freezegun>=1.2.0
 
 # Testing (Optional)

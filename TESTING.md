@@ -346,4 +346,4 @@ For tests requiring PostgreSQL-specific features, override this fixture.
 - [Django Testing](https://docs.djangoproject.com/en/stable/topics/testing/)
 - [DRF Testing](https://www.django-rest-framework.org/api-guide/testing/)
 - [Factory Boy](https://factoryboy.readthedocs.io/)
-- [pytest-django](https://pytest-django.readthedocs.io/)
+- [pytest-django](https://pytest-django.readthedocs.io/)- [Django Channels Testing](https://channels.readthedocs.io/en/stable/topics/testing.html)

@@ -45,6 +45,12 @@ def admin_client(api_client, admin_user):
 @pytest.fixture
 def channel_layer():
     """Provide a channel layer for WebSocket testing."""
+    from django.conf import settings
+    settings.CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer'
+        }
+    }
     return get_channel_layer()
 
 
