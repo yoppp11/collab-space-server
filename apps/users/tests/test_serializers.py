@@ -207,16 +207,12 @@ class TestUserPreferencesSerializer:
     def test_update_preferences(self, user):
         """Test updating user preferences."""
         data = {
-            'preferences': {
-                'theme': 'dark',
-                'language': 'en',
-                'notifications_enabled': True,
-            }
+            'theme': 'dark',
+            'notification_email': False,
         }
         serializer = UserPreferencesSerializer(user, data=data, partial=True)
         assert serializer.is_valid(), serializer.errors
         updated_user = serializer.save()
         
         assert updated_user.preferences['theme'] == 'dark'
-        assert updated_user.preferences['language'] == 'en'
-        assert updated_user.preferences['notifications_enabled'] is True
+        assert updated_user.preferences['notification_email'] is False

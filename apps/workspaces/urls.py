@@ -26,5 +26,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(workspaces_router.urls)),
     path('', include(boards_router.urls)),
+    path('boards/', include((workspaces_router.urls, 'boards'))),
     path('invitations/<str:token>/accept/', InvitationAcceptView.as_view(), name='invitation-accept'),
 ]
