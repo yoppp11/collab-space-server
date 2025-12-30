@@ -1,0 +1,17 @@
+"""
+Pytest fixtures for collaboration app tests.
+"""
+import pytest
+from channels.testing import WebsocketCommunicator
+from apps.collaboration.consumers import DocumentConsumer
+
+
+@pytest.fixture
+def websocket_communicator(user, document):
+    """Create a WebSocket communicator for testing."""
+    communicator = WebsocketCommunicator(
+        DocumentConsumer.as_asgi(),
+        f"/ws/documents/{document.id}/"
+    )
+    communicator.scope['user'] = user
+    return communicator

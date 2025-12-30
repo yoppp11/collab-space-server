@@ -98,6 +98,78 @@ A robust, scalable backend for a real-time collaboration platform built with Dja
    - Admin: http://localhost:8000/admin/
    - WebSocket: ws://localhost:8000/ws/
 
+## Testing
+
+This project has comprehensive test coverage with unit tests, integration tests, and WebSocket tests.
+
+### Quick Test Commands
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=apps --cov-report=html
+
+# Run specific test categories
+pytest -m unit              # Unit tests only
+pytest -m integration       # Integration tests only
+pytest -m websocket         # WebSocket tests only
+
+# Run tests for specific app
+pytest apps/users/tests/
+pytest apps/workspaces/tests/
+
+# Run tests in parallel (faster)
+pytest -n auto
+
+# Generate HTML coverage report
+pytest --cov=apps --cov-report=html
+# Open htmlcov/index.html in browser
+```
+
+### Using Test Scripts
+
+**Windows:**
+```cmd
+run_tests.bat                # All tests
+run_tests.bat unit           # Unit tests only
+run_tests.bat integration    # Integration tests
+run_tests.bat coverage       # With coverage
+run_tests.bat parallel       # Parallel execution
+```
+
+**Linux/Mac:**
+```bash
+chmod +x run_tests.sh
+./run_tests.sh               # All tests
+./run_tests.sh unit          # Unit tests only
+./run_tests.sh coverage      # With coverage
+```
+
+**Python script:**
+```bash
+python run_tests.py --unit
+python run_tests.py --integration
+python run_tests.py --coverage
+python run_tests.py --app users
+python run_tests.py --parallel --verbose
+```
+
+### Test Structure
+
+- **Unit Tests**: Fast, isolated tests for models, serializers, services
+- **Integration Tests**: End-to-end workflow tests across multiple apps
+- **WebSocket Tests**: Real-time collaboration feature tests
+- **Performance Tests**: Benchmarks for critical operations
+
+### Coverage Goals
+
+- Minimum coverage: **80%**
+- Current coverage: Check with `pytest --cov=apps`
+
+For detailed testing documentation, see [TESTING.md](TESTING.md)
+
 ### Local Development Setup
 
 1. **Create virtual environment**
