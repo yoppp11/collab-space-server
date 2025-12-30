@@ -14,15 +14,6 @@ DATABASES = {
     }
 }
 
-# Disable migrations for faster test runs
-class DisableMigrations:
-    def __contains__(self, item):
-        return True
-    
-    def __getitem__(self, item):
-        return None
-
-
 # Use weaker password hashing for faster tests
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',

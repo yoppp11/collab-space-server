@@ -18,15 +18,6 @@ from apps.core.tests.factories import (
 User = get_user_model()
 
 
-@pytest.fixture(scope='session')
-def django_db_setup():
-    """Override default database setup for testing."""
-    settings.DATABASES['default'] = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    }
-
-
 @pytest.fixture
 def api_client():
     """Provide a Django REST Framework API client."""
