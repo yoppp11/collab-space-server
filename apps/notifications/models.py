@@ -55,7 +55,7 @@ class Notification(BaseModel):
     read_at = models.DateTimeField(null=True, blank=True)
     
     # Metadata
-    metadata = models.JSONField(default=dict, blank=True)
+    metadata = models.JSONField(default=dict, blank=True, null=True)
     
     class Meta:
         db_table = 'notifications'

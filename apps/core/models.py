@@ -57,6 +57,14 @@ class SoftDeleteModel(models.Model):
     class Meta:
         abstract = True
 
+    def delete(self, using=None, keep_parents=False):
+        """Override delete to perform soft delete by default."""
+        self.soft_delete()
+
+    def hard_delete(self, using=None, keep_parents=False):
+        """Actually delete the record from the database."""
+        super().delete(using=using, keep_parents=keep_parents)
+
     def soft_delete(self):
         """Mark the record as deleted."""
         self.is_deleted = True

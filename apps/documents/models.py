@@ -72,6 +72,7 @@ class Document(BaseModel, SoftDeleteModel):
     state = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='Collaborative editing state (CRDT)'
     )
     
@@ -90,7 +91,8 @@ class Document(BaseModel, SoftDeleteModel):
     tags = ArrayField(
         models.CharField(max_length=50),
         default=list,
-        blank=True
+        blank=True,
+        null=True
     )
     
     # For Trello-style cards
@@ -101,6 +103,7 @@ class Document(BaseModel, SoftDeleteModel):
     properties = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='Custom properties (select, multi-select, date, etc.)'
     )
     
@@ -194,6 +197,7 @@ class Block(MPTTModel, BaseModel):
     content = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='Block content in structured format'
     )
     
@@ -207,6 +211,7 @@ class Block(MPTTModel, BaseModel):
     properties = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='Block-specific settings (color, checked, language, etc.)'
     )
     
@@ -262,10 +267,10 @@ class DocumentVersion(BaseModel):
     
     # Snapshot of document state
     title = models.CharField(max_length=500)
-    state = models.JSONField(default=dict)
+    state = models.JSONField(default=dict, null=True)
     
     # Snapshot of all blocks as JSON
-    blocks_snapshot = models.JSONField(default=list)
+    blocks_snapshot = models.JSONField(default=list, null=True)
     
     # Who created this version
     created_by = models.ForeignKey(

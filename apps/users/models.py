@@ -84,6 +84,7 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel, SoftDeleteModel):
     preferences = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='User preferences and settings'
     )
     
@@ -137,7 +138,7 @@ class UserSession(BaseModel):
         related_name='sessions'
     )
     session_key = models.CharField(max_length=255, unique=True)
-    device_info = models.JSONField(default=dict, blank=True)
+    device_info = models.JSONField(default=dict, blank=True, null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     last_activity = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -182,7 +183,7 @@ class UserActivity(BaseModel):
         db_index=True
     )
     description = models.TextField(blank=True)
-    metadata = models.JSONField(default=dict, blank=True)
+    metadata = models.JSONField(default=dict, blank=True, null=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     
     # Reference to related objects

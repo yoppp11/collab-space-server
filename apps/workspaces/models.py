@@ -63,6 +63,7 @@ class Workspace(BaseModel, SoftDeleteModel):
     settings = models.JSONField(
         default=dict,
         blank=True,
+        null=True,
         help_text='Workspace settings and configuration'
     )
     
@@ -228,7 +229,7 @@ class Board(BaseModel, SoftDeleteModel, OrderedModel):
     )
     
     # Board-specific settings
-    settings = models.JSONField(default=dict, blank=True)
+    settings = models.JSONField(default=dict, blank=True, null=True)
     
     # Visibility override
     is_private = models.BooleanField(

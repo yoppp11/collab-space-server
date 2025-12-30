@@ -4,13 +4,22 @@ Test settings for running tests.
 Optimized for test performance and isolation.
 """
 from config.settings.base import *
+import os
 
-# Use SQLite for faster tests
+# Use PostgreSQL for tests to match production environment
+# This is required because we use PostgreSQL-specific features like ArrayField
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('POSTGRES_DB', 'collab_platform_test'),
+        'USER': os.environ.get('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
         'ATOMIC_REQUESTS': True,
+        'TEST': {
+            'NAME': 'test_collab_platform',
+        },
     }
 }
 
