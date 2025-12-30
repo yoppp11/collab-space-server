@@ -3,7 +3,7 @@ User Services - Business Logic Layer
 """
 from typing import Optional
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, models
 from django.utils import timezone
 from .models import UserActivity, UserSession
 
