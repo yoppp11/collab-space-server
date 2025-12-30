@@ -34,4 +34,4 @@ RUN python manage.py collectstatic --noinput || true
 EXPOSE 8000
 
 # Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000", "celery", "-A", "app.celery", "worker", "--loglevel=info"]

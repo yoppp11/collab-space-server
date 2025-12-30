@@ -5,7 +5,7 @@ Implements Workspace -> Board/Folder -> Document hierarchy
 with role-based access control at each level.
 """
 from django.db import models
-from django.conf import settings
+from django.conf import settings as django_settings
 from apps.core.models import BaseModel, SoftDeleteModel, SoftDeleteManager, OrderedModel
 
 
@@ -46,15 +46,16 @@ class Workspace(BaseModel, SoftDeleteModel):
     
     # Owner (creator)
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='owned_workspaces'
     )
     
     # Members through WorkspaceMembership
     members = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         through='WorkspaceMembership',
+        through_fields=('workspace', 'user'),
         related_name='workspaces'
     )
     
@@ -101,9 +102,17 @@ class WorkspaceMembership(BaseModel):
         related_name='memberships'
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='workspace_memberships'
+    )
+    # Invitation tracking
+    invited_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_workspace_invitations'
     )
     role = models.CharField(
         max_length=20,
@@ -111,14 +120,6 @@ class WorkspaceMembership(BaseModel):
         default=WorkspaceRole.MEMBER
     )
     
-    # Invitation tracking
-    invited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='sent_workspace_invitations'
-    )
     joined_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     
@@ -157,7 +158,7 @@ class WorkspaceInvitation(BaseModel):
         default=WorkspaceRole.MEMBER
     )
     invited_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='workspace_invitations'
     )
@@ -237,7 +238,7 @@ class Board(BaseModel, SoftDeleteModel, OrderedModel):
     
     # Creator
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_boards'
@@ -268,7 +269,7 @@ class BoardMembership(BaseModel):
         related_name='memberships'
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        django_settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='board_memberships'
     )
