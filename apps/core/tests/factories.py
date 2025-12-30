@@ -119,7 +119,7 @@ class BlockFactory(DjangoModelFactory):
         model = 'documents.Block'
     
     document = factory.SubFactory(DocumentFactory)
-    type = 'text'
+    block_type = 'text'
     content = factory.Dict({
         'text': factory.Faker('sentence'),
         'format': [],

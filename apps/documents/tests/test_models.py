@@ -74,20 +74,20 @@ class TestBlockModel:
         """Test creating a block."""
         block = BlockFactory(
             document=document,
-            type='text',
+            block_type='text',
             content={'text': 'Hello world'}
         )
         assert block.document == document
-        assert block.type == 'text'
+        assert block.block_type == 'text'
         assert block.content['text'] == 'Hello world'
     
     def test_nested_blocks(self, document):
         """Test creating nested blocks."""
-        parent = BlockFactory(document=document, type='heading')
+        parent = BlockFactory(document=document, block_type='heading')
         child = BlockFactory(
             document=document,
             parent=parent,
-            type='text'
+            block_type='text'
         )
         
         assert child.parent == parent

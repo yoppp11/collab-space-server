@@ -116,7 +116,7 @@ class TestBlockAPI:
         url = reverse('documents:block-list')
         data = {
             'document': document.id,
-            'type': 'text',
+            'block_type': 'text',
             'content': {'text': 'Hello world'},
         }
         response = authenticated_client.post(url, data, format='json')

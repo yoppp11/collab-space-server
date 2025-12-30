@@ -138,3 +138,11 @@ class UserPreferencesSerializer(serializers.Serializer):
     notification_mentions = serializers.BooleanField(default=True)
     sidebar_collapsed = serializers.BooleanField(default=False)
     default_view = serializers.ChoiceField(choices=['list', 'board', 'calendar'], default='list')
+
+    def update(self, instance, validated_data):
+        """Update user preferences."""
+        if not instance.preferences:
+            instance.preferences = {}
+        instance.preferences.update(validated_data)
+        instance.save(update_fields=['preferences'])
+        return instance

@@ -31,9 +31,10 @@ class TestUserModel:
     
     def test_user_email_must_be_unique(self):
         """Test that user email must be unique."""
-        UserFactory(email='test@example.com')
+        User = get_user_model()
+        User.objects.create_user(email='test@example.com', password='testpass')
         with pytest.raises(IntegrityError):
-            UserFactory(email='test@example.com')
+            User.objects.create_user(email='test@example.com', password='testpass')
     
     def test_user_str_representation(self):
         """Test user string representation."""
@@ -88,9 +89,12 @@ class TestUserModel:
             User.objects.create_user(email='', password='testpass')
     
     def test_user_preferences_default(self):
-        """Test user preferences default to empty dict."""
+        """Test user preferences are initialized with defaults on creation."""
         user = UserFactory()
-        assert user.preferences == {}
+        assert user.preferences is not None
+        assert 'theme' in user.preferences
+        assert 'notification_email' in user.preferences
+        assert user.preferences['theme'] == 'system'
     
     def test_user_avatar_color_default(self):
         """Test user avatar_color has default value."""

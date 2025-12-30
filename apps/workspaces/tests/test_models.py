@@ -42,9 +42,11 @@ class TestWorkspaceModel:
             WorkspaceFactory(slug='test-workspace')
     
     def test_workspace_settings_default(self):
-        """Test workspace settings default to empty dict."""
+        """Test workspace settings are initialized with defaults."""
         workspace = WorkspaceFactory()
-        assert workspace.settings == {}
+        assert workspace.settings is not None
+        assert 'allow_guests' in workspace.settings
+        assert workspace.settings['allow_guests'] is True
     
     def test_get_member_count(self, workspace_with_members):
         """Test getting workspace member count."""
