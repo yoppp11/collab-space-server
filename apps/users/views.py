@@ -178,3 +178,39 @@ class OnlineStatusView(APIView):
             'success': True,
             'data': {'last_seen': user.last_seen}
         })
+
+
+class AvatarUpdateView(APIView):
+    """
+    Update user's avatar URL (for third-party hosted images).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        avatar_url = request.data.get('avatar_url')
+        
+        if not avatar_url:
+            return Response({
+                'success': False,
+                'error': {'message': 'avatar_url is required'}
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        # For URL-based avatars, we store the URL directly
+        # You could also download and save locally if preferred
+        user.avatar = avatar_url
+        user.save(update_fields=['avatar', 'updated_at'])
+        
+        # Log the activity
+        UserService.log_activity(
+            user=user,
+            activity_type='profile_update',
+            description='Avatar updated',
+            request=request
+        )
+        
+        return Response({
+            'success': True,
+            'data': {'avatar': avatar_url},
+            'message': 'Avatar updated successfully'
+        })

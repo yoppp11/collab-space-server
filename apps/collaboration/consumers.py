@@ -628,3 +628,128 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'type': 'notification',
             'data': event['data']
         }))
+
+
+class WorkspaceConsumer(AsyncWebsocketConsumer):
+    """
+    WebSocket consumer for real-time workspace updates.
+    
+    Handles:
+    - Board creation/updates/deletion
+    - Member joins/leaves
+    - Workspace settings changes
+    - Card updates on boards
+    """
+    
+    async def connect(self):
+        self.user = self.scope['user']
+        self.workspace_id = self.scope['url_route']['kwargs']['workspace_id']
+        self.workspace_group = f'workspace_{self.workspace_id}'
+        
+        # Authenticate user
+        if not self.user or self.user.is_anonymous:
+            logger.warning(f"Unauthenticated connection attempt to workspace {self.workspace_id}")
+            await self.close(code=4001)
+            return
+        
+        # Check workspace access permissions
+        has_access = await self._check_workspace_access()
+        if not has_access:
+            logger.warning(f"User {self.user.id} denied access to workspace {self.workspace_id}")
+            await self.close(code=4003)
+            return
+        
+        # Accept connection
+        await self.accept()
+        
+        # Join workspace room
+        await self.channel_layer.group_add(
+            self.workspace_group,
+            self.channel_name
+        )
+        
+        logger.info(f"User {self.user.id} connected to workspace {self.workspace_id}")
+    
+    async def disconnect(self, close_code):
+        # Leave workspace room
+        if hasattr(self, 'workspace_group'):
+            await self.channel_layer.group_discard(
+                self.workspace_group,
+                self.channel_name
+            )
+            logger.info(f"User {self.user.id} disconnected from workspace {self.workspace_id}")
+    
+    @database_sync_to_async
+    def _check_workspace_access(self):
+        """Check if user has access to this workspace."""
+        from apps.workspaces.models import WorkspaceMembership
+        return WorkspaceMembership.objects.filter(
+            workspace_id=self.workspace_id,
+            user_id=self.user.id,
+            is_active=True
+        ).exists()
+    
+    # Event handlers for different types of workspace updates
+    
+    async def board_created(self, event):
+        """Broadcast board creation to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'board.created',
+            'data': event['data']
+        }))
+    
+    async def board_updated(self, event):
+        """Broadcast board updates to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'board.updated',
+            'data': event['data']
+        }))
+    
+    async def board_deleted(self, event):
+        """Broadcast board deletion to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'board.deleted',
+            'data': event['data']
+        }))
+    
+    async def member_joined(self, event):
+        """Broadcast member join to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'member.joined',
+            'data': event['data']
+        }))
+    
+    async def member_left(self, event):
+        """Broadcast member leave to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'member.left',
+            'data': event['data']
+        }))
+    
+    async def member_role_updated(self, event):
+        """Broadcast member role update to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'member.role_updated',
+            'data': event['data']
+        }))
+    
+    async def card_created(self, event):
+        """Broadcast card creation to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'card.created',
+            'data': event['data']
+        }))
+    
+    async def card_updated(self, event):
+        """Broadcast card updates to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'card.updated',
+            'data': event['data']
+        }))
+    
+    async def card_comment_created(self, event):
+        """Broadcast card comment creation to all workspace members."""
+        await self.send(text_data=json.dumps({
+            'type': 'card.comment_created',
+            'data': event['data']
+        }))

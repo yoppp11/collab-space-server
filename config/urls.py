@@ -15,6 +15,7 @@ urlpatterns = [
         path('workspaces/', include('apps.workspaces.urls')),
         path('documents/', include('apps.documents.urls')),
         path('notifications/', include('apps.notifications.urls')),
+        path('core/', include('apps.core.urls')),
     ])),
 ]
 

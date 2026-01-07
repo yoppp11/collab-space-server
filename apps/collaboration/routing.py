@@ -7,4 +7,5 @@ from . import consumers
 websocket_urlpatterns = [
     path('ws/documents/<uuid:document_id>/', consumers.DocumentConsumer.as_asgi()),
     path('ws/notifications/', consumers.NotificationConsumer.as_asgi()),
+    path('ws/workspaces/<uuid:workspace_id>/', consumers.WorkspaceConsumer.as_asgi()),
 ]

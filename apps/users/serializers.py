@@ -77,8 +77,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         required=True,
-        validators=[validate_password],
-        style={'input_type': 'password'}
+        min_length=6,
+        style={'input_type': 'password'},
+        error_messages={
+            'min_length': 'Password must be at least 6 characters long.'
+        }
     )
     password_confirm = serializers.CharField(
         write_only=True,

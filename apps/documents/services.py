@@ -4,13 +4,15 @@ Document Services
 from typing import Optional
 from django.db import transaction
 from django.utils import timezone
+from django.core.cache import cache
 from .models import Document, Block, DocumentVersion
+from apps.core.cache import CacheManager, CACHE_TIMEOUT_SHORT, CACHE_TIMEOUT_MEDIUM
 import json
 
 
 class DocumentService:
     """
-    Service for document operations.
+    Service for document operations with caching support.
     """
     
     @staticmethod
@@ -37,6 +39,31 @@ class DocumentService:
             created_by=user,
             last_edited_by=user
         )
+        
+        return document
+    
+    @staticmethod
+    def get_document_with_blocks(document_id: str) -> Optional[Document]:
+        """
+        Get a document with its blocks, using cache.
+        """
+        cache_key = CacheManager.get_document_cache_key(document_id, "with_blocks")
+        cached_data = cache.get(cache_key)
+        
+        if cached_data:
+            return cached_data
+        
+        document = Document.objects.filter(
+            id=document_id,
+            is_deleted=False
+        ).prefetch_related(
+            'blocks'
+        ).select_related(
+            'workspace', 'created_by', 'last_edited_by'
+        ).first()
+        
+        if document:
+            cache.set(cache_key, document, CACHE_TIMEOUT_SHORT)
         
         return document
     
@@ -78,6 +105,21 @@ class DocumentService:
         return new_document
     
     @staticmethod
+    def update_document(document: Document, user, **kwargs) -> Document:
+        """
+        Update a document and invalidate cache.
+        """
+        for key, value in kwargs.items():
+            setattr(document, key, value)
+        document.last_edited_by = user
+        document.save()
+        
+        # Invalidate caches
+        CacheManager.invalidate_document_all(str(document.id))
+        
+        return document
+    
+    @staticmethod
     def create_version_snapshot(document: Document, user, change_summary: str = '') -> DocumentVersion:
         """
         Create a version snapshot of the document.
@@ -108,7 +150,7 @@ class DocumentService:
 
 class BlockService:
     """
-    Service for block operations.
+    Service for block operations with cache invalidation.
     """
     
     @staticmethod
@@ -148,7 +190,43 @@ class BlockService:
             **kwargs
         )
         
+        # Invalidate document cache
+        CacheManager.invalidate_document_blocks(document_id)
+        
         return block
+    
+    @staticmethod
+    def update_block(block: Block, user, **kwargs) -> Block:
+        """
+        Update a block and invalidate cache.
+        """
+        for key, value in kwargs.items():
+            if key == 'content':
+                block.content = value
+                block.text = BlockService._extract_text(value)
+            else:
+                setattr(block, key, value)
+        
+        block.last_edited_by = user
+        block.save()
+        
+        # Invalidate document cache
+        CacheManager.invalidate_document_blocks(str(block.document_id))
+        
+        return block
+    
+    @staticmethod
+    def delete_block(block: Block) -> bool:
+        """
+        Delete a block and invalidate cache.
+        """
+        document_id = str(block.document_id)
+        block.delete()
+        
+        # Invalidate document cache
+        CacheManager.invalidate_document_blocks(document_id)
+        
+        return True
     
     @staticmethod
     def _extract_text(content: dict) -> str:

@@ -12,6 +12,10 @@ from .models import (
     Board, BoardMembership, BoardList, WorkspaceRole
 )
 from .permissions import invalidate_permission_cache
+from apps.core.cache import (
+    CacheManager, cached, CACHE_TIMEOUT_MEDIUM, CACHE_TIMEOUT_SHORT,
+    CACHE_PREFIX_WORKSPACE
+)
 
 
 class WorkspaceService:
@@ -57,7 +61,34 @@ class WorkspaceService:
             position=0
         )
         
+        # Invalidate user's workspace list cache
+        CacheManager.invalidate_user_workspaces(str(user.id))
+        
         return workspace
+    
+    @staticmethod
+    @transaction.atomic
+    def generate_invite_link(
+        workspace: Workspace,
+        role: str,
+        invited_by,
+    ) -> WorkspaceInvitation:
+        """
+        Generate an invite link without requiring an email.
+        Anyone with this link can join the workspace.
+        """
+        # Create invitation without email (link-based)
+        invitation = WorkspaceInvitation.objects.create(
+            workspace=workspace,
+            email='',  # No email for link-based invitations
+            role=role,
+            invited_by=invited_by,
+            message='',
+            token=secrets.token_urlsafe(32),
+            expires_at=timezone.now() + timezone.timedelta(days=7)
+        )
+        
+        return invitation
     
     @staticmethod
     @transaction.atomic
@@ -73,6 +104,10 @@ class WorkspaceService:
         """
         from django.contrib.auth import get_user_model
         User = get_user_model()
+        
+        # If no email provided, generate a link-based invitation
+        if not email:
+            return WorkspaceService.generate_invite_link(workspace, role, invited_by)
         
         # Check if user already exists and is a member
         existing_user = User.objects.filter(email__iexact=email).first()
@@ -132,6 +167,10 @@ class WorkspaceService:
         invitation.status = WorkspaceInvitation.InvitationStatus.ACCEPTED
         invitation.save()
         
+        # Invalidate caches
+        CacheManager.invalidate_user_workspaces(str(user.id))
+        CacheManager.invalidate_workspace_members(str(invitation.workspace.id))
+        
         return membership
     
     @staticmethod
@@ -169,6 +208,9 @@ class WorkspaceService:
         # Invalidate permission cache
         invalidate_permission_cache(user.id, workspace_id=workspace.id)
         
+        # Invalidate workspace members cache
+        CacheManager.invalidate_workspace_members(str(workspace.id))
+        
         return membership
     
     @staticmethod
@@ -193,18 +235,39 @@ class WorkspaceService:
         # Invalidate permission cache
         invalidate_permission_cache(user.id, workspace_id=workspace.id)
         
+        # Invalidate workspace members cache
+        CacheManager.invalidate_workspace_members(str(workspace.id))
+        
         return True
     
     @staticmethod
     def get_user_workspaces(user) -> List[Workspace]:
         """
         Get all workspaces a user is a member of.
+        Uses cache for improved performance.
         """
-        return Workspace.objects.filter(
+        cache_key = CacheManager.get_user_cache_key(str(user.id), "workspaces_list")
+        cached_ids = cache.get(cache_key)
+        
+        if cached_ids is not None:
+            # Return fresh queryset with cached IDs for proper serialization
+            return Workspace.objects.filter(
+                id__in=cached_ids,
+                is_deleted=False
+            ).order_by('-updated_at')
+        
+        # Fetch and cache
+        workspaces = Workspace.objects.filter(
             memberships__user=user,
             memberships__is_active=True,
             is_deleted=False
         ).distinct().order_by('-updated_at')
+        
+        # Cache the IDs
+        workspace_ids = list(workspaces.values_list('id', flat=True))
+        cache.set(cache_key, workspace_ids, CACHE_TIMEOUT_MEDIUM)
+        
+        return workspaces
 
 
 class BoardService:
@@ -250,6 +313,9 @@ class BoardService:
                     name=list_name,
                     position=i
                 )
+        
+        # Invalidate workspace boards cache
+        CacheManager.invalidate_workspace_boards(str(workspace.id))
         
         return board
     
@@ -304,13 +370,23 @@ class BoardService:
 
 class WorkspaceSelector:
     """
-    Selector class for workspace queries.
+    Selector class for workspace queries with caching support.
     """
     
     @staticmethod
     def get_workspace_by_slug(slug: str) -> Optional[Workspace]:
-        """Get workspace by slug."""
-        return Workspace.objects.filter(slug=slug, is_deleted=False).first()
+        """Get workspace by slug with caching."""
+        cache_key = f"{CACHE_PREFIX_WORKSPACE}:slug:{slug}"
+        workspace_id = cache.get(cache_key)
+        
+        if workspace_id:
+            return Workspace.objects.filter(id=workspace_id, is_deleted=False).first()
+        
+        workspace = Workspace.objects.filter(slug=slug, is_deleted=False).first()
+        if workspace:
+            cache.set(cache_key, str(workspace.id), CACHE_TIMEOUT_MEDIUM)
+        
+        return workspace
     
     @staticmethod
     def get_workspace_members(workspace: Workspace):
@@ -331,8 +407,11 @@ class WorkspaceSelector:
     
     @staticmethod
     def get_board_with_lists(board_id: str) -> Optional[Board]:
-        """Get board with prefetched lists."""
+        """Get board with prefetched lists and cards."""
         return Board.objects.filter(
             id=board_id,
             is_deleted=False
-        ).prefetch_related('lists').first()
+        ).prefetch_related(
+            'lists',
+            'lists__board_cards'
+        ).first()

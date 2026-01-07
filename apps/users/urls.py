@@ -12,6 +12,7 @@ from .views import (
     PasswordChangeView,
     UserPreferencesView,
     OnlineStatusView,
+    AvatarUpdateView,
 )
 
 app_name = 'users'
@@ -27,6 +28,7 @@ urlpatterns = [
     
     # Profile
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/avatar/', AvatarUpdateView.as_view(), name='avatar_update'),
     path('password/change/', PasswordChangeView.as_view(), name='password_change'),
     path('preferences/', UserPreferencesView.as_view(), name='preferences'),
     path('status/', OnlineStatusView.as_view(), name='online_status'),

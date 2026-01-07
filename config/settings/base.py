@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.core.middleware.CacheHeaderMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -187,26 +188,42 @@ CHANNEL_LAYERS = {
 # =============================================================================
 # Redis Cache Configuration
 # =============================================================================
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
+
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f"redis://{os.environ.get('REDIS_HOST', 'localhost')}:6379/1",
+        'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'SOCKET_CONNECT_TIMEOUT': 5,
             'SOCKET_TIMEOUT': 5,
             'CONNECTION_POOL_KWARGS': {'max_connections': 50},
             'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'IGNORE_EXCEPTIONS': True,  # Graceful degradation if Redis is down
         },
         'KEY_PREFIX': 'collab_platform',
+        'TIMEOUT': 300,  # Default 5 minute timeout
     },
     'sessions': {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f"redis://{os.environ.get('REDIS_HOST', 'localhost')}:6379/2",
+        'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/2",
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
         'KEY_PREFIX': 'session',
+    },
+    # Separate cache for API responses (shorter TTL)
+    'api_cache': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': f"redis://{REDIS_HOST}:{REDIS_PORT}/3",
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+        },
+        'KEY_PREFIX': 'api',
+        'TIMEOUT': 60,  # 1 minute default for API cache
     },
 }
 

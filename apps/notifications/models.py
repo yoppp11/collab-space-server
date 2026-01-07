@@ -18,6 +18,7 @@ class Notification(BaseModel):
         INVITE = 'invite', 'Workspace invitation'
         ASSIGNMENT = 'assignment', 'Assigned to task'
         DUE_DATE = 'due_date', 'Due date reminder'
+        WORKSPACE = 'workspace', 'Workspace event'
         SYSTEM = 'system', 'System notification'
     
     recipient = models.ForeignKey(

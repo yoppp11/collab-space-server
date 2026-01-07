@@ -23,6 +23,22 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             recipient=self.request.user
         )
     
+    def retrieve(self, request, *args, **kwargs):
+        """Get a single notification and mark it as read."""
+        instance = self.get_object()
+        
+        # Mark as read if not already read
+        if not instance.is_read:
+            instance.is_read = True
+            instance.read_at = timezone.now()
+            instance.save(update_fields=['is_read', 'read_at'])
+        
+        serializer = self.get_serializer(instance)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+    
     @action(detail=False, methods=['get'])
     def unread_count(self, request):
         """Get count of unread notifications."""

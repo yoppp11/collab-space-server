@@ -9,6 +9,10 @@ from django.conf import settings as django_settings
 from apps.core.models import BaseModel, SoftDeleteModel, SoftDeleteManager, OrderedModel
 
 
+# Store reference to built-in list before it gets shadowed
+_list = list
+
+
 class WorkspaceRole(models.TextChoices):
     """Workspace-level roles."""
     OWNER = 'owner', 'Owner'
@@ -293,6 +297,13 @@ class BoardList(BaseModel, OrderedModel):
     Lists within a board (Trello columns).
     """
     
+    class ListStatus(models.TextChoices):
+        TODO = 'todo', 'To Do'
+        IN_PROGRESS = 'in_progress', 'In Progress'
+        REVIEW = 'review', 'In Review'
+        DONE = 'done', 'Done'
+        CUSTOM = 'custom', 'Custom'
+    
     board = models.ForeignKey(
         Board,
         on_delete=models.CASCADE,
@@ -300,6 +311,12 @@ class BoardList(BaseModel, OrderedModel):
     )
     name = models.CharField(max_length=100)
     color = models.CharField(max_length=7, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=ListStatus.choices,
+        default=ListStatus.CUSTOM,
+        help_text='Status category for this list'
+    )
     
     # WIP limits for Kanban
     wip_limit = models.PositiveIntegerField(
@@ -317,3 +334,134 @@ class BoardList(BaseModel, OrderedModel):
     
     def __str__(self):
         return f"{self.board.name} / {self.name}"
+
+
+class Card(BaseModel, OrderedModel):
+    """
+    Cards within a board list (Trello cards).
+    """
+    
+    class CardStatus(models.TextChoices):
+        TODO = 'todo', 'To Do'
+        IN_PROGRESS = 'in_progress', 'In Progress'
+        REVIEW = 'review', 'In Review'
+        DONE = 'done', 'Done'
+        BLOCKED = 'blocked', 'Blocked'
+    
+    list = models.ForeignKey(
+        BoardList,
+        on_delete=models.CASCADE,
+        related_name='board_cards'
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    
+    # Status
+    status = models.CharField(
+        max_length=20,
+        choices=CardStatus.choices,
+        default=CardStatus.TODO,
+        help_text='Current status of the card'
+    )
+    
+    # Visual customization
+    color = models.CharField(max_length=7, blank=True)
+    cover_image = models.ImageField(
+        upload_to='card_covers/%Y/%m/',
+        blank=True,
+        null=True
+    )
+    
+    # Due date
+    due_date = models.DateTimeField(null=True, blank=True)
+    
+    # Labels (stored as JSON array of label IDs or inline)
+    # Using _list because 'list' is shadowed by the ForeignKey field above
+    labels = models.JSONField(default=_list, blank=True, null=True)
+    
+    # Assignees
+    assignees = models.ManyToManyField(
+        django_settings.AUTH_USER_MODEL,
+        related_name='assigned_cards',
+        blank=True
+    )
+    
+    # Creator
+    created_by = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_cards'
+    )
+    
+    # Archived status
+    is_archived = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'board_cards'
+        ordering = ['position']
+        indexes = [
+            models.Index(fields=['list', 'position']),
+            models.Index(fields=['due_date']),
+            models.Index(fields=['is_archived']),
+        ]
+    
+    def __str__(self):
+        return self.title
+
+
+class CardComment(BaseModel):
+    """
+    Comments on cards with mention support.
+    """
+    
+    card = models.ForeignKey(
+        Card,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    author = models.ForeignKey(
+        django_settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='card_comments'
+    )
+    text = models.TextField()
+    
+    # Image attachments
+    images = models.JSONField(
+        default=_list,
+        blank=True,
+        null=True,
+        help_text='Array of image URLs or file paths'
+    )
+    
+    # Mentioned users
+    mentions = models.ManyToManyField(
+        django_settings.AUTH_USER_MODEL,
+        related_name='mentioned_in_card_comments',
+        blank=True
+    )
+    
+    # Parent comment for nested replies (optional)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+    
+    # Edit tracking
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'card_comments'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['card', 'created_at']),
+            models.Index(fields=['author']),
+        ]
+    
+    def __str__(self):
+        return f"Comment by {self.author.display_name} on {self.card.title}"
