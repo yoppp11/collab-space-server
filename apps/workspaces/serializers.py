@@ -74,6 +74,8 @@ class WorkspaceCreateSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'icon', 'icon_color', 'is_public']
     
     def create(self, validated_data):
+        from apps.core.cache import CacheManager
+        
         user = self.context['request'].user
         
         # Generate unique slug
@@ -96,6 +98,9 @@ class WorkspaceCreateSerializer(serializers.ModelSerializer):
             user=user,
             role=WorkspaceRole.OWNER
         )
+        
+        # Invalidate user's workspace list cache for immediate display
+        CacheManager.invalidate_user_workspaces(str(user.id))
         
         return workspace
 
@@ -194,6 +199,8 @@ class BoardCreateSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'board_type', 'icon', 'color', 'parent', 'is_private']
     
     def create(self, validated_data):
+        from apps.core.cache import CacheManager
+        
         workspace = self.context['workspace']
         user = self.context['request'].user
         
@@ -210,6 +217,9 @@ class BoardCreateSerializer(serializers.ModelSerializer):
             position=max_position + 1
         )
         
+        # Invalidate workspace boards cache for immediate display
+        CacheManager.invalidate_workspace_boards(str(workspace.id))
+        
         return board
 
 
@@ -221,17 +231,24 @@ class BoardListCreateSerializer(serializers.ModelSerializer):
         fields = ['name', 'color', 'status']
     
     def create(self, validated_data):
+        from apps.core.cache import CacheManager
+        
         board = self.context['board']
         
         max_position = BoardList.objects.filter(
             board=board
         ).aggregate(max_pos=models.Max('position'))['max_pos'] or 0
         
-        return BoardList.objects.create(
+        board_list = BoardList.objects.create(
             **validated_data,
             board=board,
             position=max_position + 1
         )
+        
+        # Invalidate board detail cache for immediate display
+        CacheManager.invalidate_board_detail(str(board.id))
+        
+        return board_list
 
 
 class CardSerializer(serializers.ModelSerializer):
@@ -261,6 +278,8 @@ class CardCreateSerializer(serializers.ModelSerializer):
         fields = ['title', 'description', 'status', 'color', 'due_date', 'labels']
     
     def create(self, validated_data):
+        from apps.core.cache import CacheManager
+        
         board_list = self.context['list']
         user = self.context['request'].user
         
@@ -268,12 +287,18 @@ class CardCreateSerializer(serializers.ModelSerializer):
             list=board_list
         ).aggregate(max_pos=models.Max('position'))['max_pos'] or 0
         
-        return Card.objects.create(
+        card = Card.objects.create(
             **validated_data,
             list=board_list,
             created_by=user,
             position=max_position + 1
         )
+        
+        # Invalidate board cards cache for immediate display
+        CacheManager.invalidate_board_cards(str(board_list.board_id), str(board_list.id))
+        CacheManager.invalidate_board_detail(str(board_list.board_id))
+        
+        return card
 
 
 class BoardListDetailSerializer(serializers.ModelSerializer):

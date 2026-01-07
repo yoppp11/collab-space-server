@@ -63,6 +63,44 @@ class DocumentViewSet(viewsets.ModelViewSet):
             'message': 'Document created successfully'
         }, status=status.HTTP_201_CREATED)
     
+    def update(self, request, *args, **kwargs):
+        """Update a document."""
+        from apps.core.cache import CacheManager
+        
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        document = serializer.save(last_edited_by=request.user)
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_document_all(str(document.id))
+        
+        return Response({
+            'success': True,
+            'data': DocumentSerializer(document).data,
+            'message': 'Document updated successfully'
+        })
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a document (soft delete)."""
+        from apps.core.cache import CacheManager
+        
+        document = self.get_object()
+        document_id = str(document.id)
+        
+        # Soft delete
+        document.is_deleted = True
+        document.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_document_all(document_id)
+        
+        return Response({
+            'success': True,
+            'message': 'Document deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
     @action(detail=True, methods=['get'])
     def versions(self, request, pk=None):
         """Get document version history."""

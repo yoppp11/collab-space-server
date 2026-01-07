@@ -367,6 +367,9 @@ class BoardService:
         
         board.position = new_position
         board.save()
+        
+        # Invalidate workspace boards cache for immediate display
+        CacheManager.invalidate_workspace_boards(str(board.workspace_id))
 
 
 class WorkspaceSelector:

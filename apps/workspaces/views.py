@@ -59,6 +59,43 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             'message': 'Workspace created successfully'
         }, status=status.HTTP_201_CREATED)
     
+    def update(self, request, *args, **kwargs):
+        """Update a workspace."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        workspace = serializer.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_workspace_detail(str(workspace.id))
+        # Also invalidate user's workspace list to update workspace name/details
+        CacheManager.invalidate_user_workspaces(str(request.user.id))
+        
+        return Response({
+            'success': True,
+            'data': WorkspaceSerializer(workspace, context={'request': request}).data,
+            'message': 'Workspace updated successfully'
+        })
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a workspace (soft delete)."""
+        workspace = self.get_object()
+        user_id = str(request.user.id)
+        
+        # Soft delete
+        workspace.is_deleted = True
+        workspace.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_user_workspaces(user_id)
+        CacheManager.invalidate_workspace_all(str(workspace.id))
+        
+        return Response({
+            'success': True,
+            'message': 'Workspace deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
     @action(detail=True, methods=['get'])
     def members(self, request, pk=None):
         """List workspace members."""
@@ -333,6 +370,41 @@ class BoardViewSet(viewsets.ModelViewSet):
             'message': 'Board created successfully'
         }, status=status.HTTP_201_CREATED)
     
+    def update(self, request, *args, **kwargs):
+        """Update a board."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        board = serializer.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_workspace_boards(str(board.workspace_id))
+        CacheManager.invalidate_board_detail(str(board.id))
+        
+        return Response({
+            'success': True,
+            'data': BoardSerializer(board, context={'request': request}).data,
+            'message': 'Board updated successfully'
+        })
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a board (soft delete)."""
+        board = self.get_object()
+        workspace_id = str(board.workspace_id)
+        
+        # Soft delete
+        board.is_deleted = True
+        board.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_workspace_boards(workspace_id)
+        
+        return Response({
+            'success': True,
+            'message': 'Board deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
     @action(detail=True, methods=['post'])
     def move(self, request, workspace_pk=None, pk=None):
         """Move a board to a new position."""
@@ -397,6 +469,38 @@ class BoardListViewSet(viewsets.ModelViewSet):
             'data': BoardListSerializer(board_list).data,
             'message': 'List created successfully'
         }, status=status.HTTP_201_CREATED)
+    
+    def update(self, request, *args, **kwargs):
+        """Update a board list."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        board_list = serializer.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_board_detail(str(board_list.board_id))
+        
+        return Response({
+            'success': True,
+            'data': BoardListSerializer(board_list).data,
+            'message': 'List updated successfully'
+        })
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a board list."""
+        board_list = self.get_object()
+        board_id = str(board_list.board_id)
+        
+        board_list.delete()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_board_detail(board_id)
+        
+        return Response({
+            'success': True,
+            'message': 'List deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
 
 
 class CardViewSet(viewsets.ModelViewSet):
@@ -432,6 +536,41 @@ class CardViewSet(viewsets.ModelViewSet):
             'message': 'Card created successfully'
         }, status=status.HTTP_201_CREATED)
     
+    def update(self, request, *args, **kwargs):
+        """Update a card."""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        card = serializer.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_board_cards(str(card.list.board_id), str(card.list.id))
+        CacheManager.invalidate_board_detail(str(card.list.board_id))
+        
+        return Response({
+            'success': True,
+            'data': CardSerializer(card, context={'request': request}).data,
+            'message': 'Card updated successfully'
+        })
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete a card."""
+        card = self.get_object()
+        board_id = str(card.list.board_id)
+        list_id = str(card.list.id)
+        
+        card.delete()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_board_cards(board_id, list_id)
+        CacheManager.invalidate_board_detail(board_id)
+        
+        return Response({
+            'success': True,
+            'message': 'Card deleted successfully'
+        }, status=status.HTTP_204_NO_CONTENT)
+    
     @action(detail=True, methods=['post'])
     def move(self, request, **kwargs):
         """Move a card to a new position or different list."""
@@ -439,12 +578,20 @@ class CardViewSet(viewsets.ModelViewSet):
         new_position = request.data.get('position', 0)
         new_list_id = request.data.get('list_id')
         
+        old_list = card.list
+        
         if new_list_id:
             new_list = get_object_or_404(BoardList, id=new_list_id)
             card.list = new_list
         
         card.position = new_position
         card.save()
+        
+        # Invalidate cache for both old and new lists for immediate display
+        CacheManager.invalidate_board_cards(str(old_list.board_id), str(old_list.id))
+        if new_list_id and str(new_list_id) != str(old_list.id):
+            CacheManager.invalidate_board_cards(str(card.list.board_id), str(card.list.id))
+        CacheManager.invalidate_board_detail(str(card.list.board_id))
         
         return Response({
             'success': True,
@@ -458,6 +605,10 @@ class CardViewSet(viewsets.ModelViewSet):
         card = self.get_object()
         card.is_archived = True
         card.save()
+        
+        # Invalidate cache for immediate display
+        CacheManager.invalidate_board_cards(str(card.list.board_id), str(card.list.id))
+        CacheManager.invalidate_board_detail(str(card.list.board_id))
         
         return Response({
             'success': True,
