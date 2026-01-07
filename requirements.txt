@@ -8,6 +8,7 @@ django-cors-headers>=4.3.0
 # Database
 psycopg2-binary>=2.9.9
 psycopg[binary]>=3.1.0
+dj-database-url>=2.1.0
 
 # Async/WebSocket
 channels>=4.0.0
@@ -44,6 +45,7 @@ django-debug-toolbar>=4.2.0
 
 # Production Server
 gunicorn>=21.2.0
+whitenoise>=6.6.0
 
 # Monitoring (Optional)
 # sentry-sdk>=1.38.0
