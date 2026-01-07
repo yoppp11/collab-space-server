@@ -246,7 +246,8 @@ class WorkspaceService:
         Get all workspaces a user is a member of.
         Uses cache for improved performance.
         """
-        cache_key = CacheManager.get_user_cache_key(str(user.id), "workspaces_list")
+        # Use consistent cache key with CacheManager
+        cache_key = CacheManager.get_user_cache_key(str(user.id), "workspaces")
         cached_ids = cache.get(cache_key)
         
         if cached_ids is not None:
