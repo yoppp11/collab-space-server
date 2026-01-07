@@ -37,7 +37,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.railway.app',
 ]
 
-# Database - use DATABASE_URL from Railway
+# Database - use DATABASE_URL from Railway or other PaaS
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     DATABASES = {
@@ -47,14 +47,8 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
-else:
-    # Fallback: Check if we have individual PostgreSQL environment variables
-    # This ensures we don't try to connect to localhost in production
-    if not os.environ.get('POSTGRES_HOST'):
-        raise ValueError(
-            'DATABASE_URL or POSTGRES_HOST environment variable must be set in production. '
-            'Please configure your database connection.'
-        )
+# If no DATABASE_URL, fall back to individual env vars from base.py
+# The base settings will use POSTGRES_HOST, POSTGRES_DB, etc.
 
 # Redis Configuration - use REDIS_URL from Railway
 REDIS_URL = os.environ.get('REDIS_URL')
