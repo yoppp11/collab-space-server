@@ -19,6 +19,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000'
 ]
 
+ALLOWED_HOSTS = [
+    ".up.railway.app",
+    "localhost",
+    "127.0.0.1",
+]
+
 # Use console email backend for development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
