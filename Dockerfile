@@ -29,11 +29,8 @@ COPY . /app/
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Make start script executable
-RUN chmod +x /app/start.sh
-
 # Expose port
 EXPOSE 8000
 
-# Default command - use startup script
-CMD ["./start.sh"]
+# Default command - run migrations then start server
+CMD python manage.py migrate --noinput; python manage.py collectstatic --noinput; uvicorn config.asgi:application --host 0.0.0.0 --port ${PORT:-8000}
