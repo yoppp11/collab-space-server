@@ -433,7 +433,7 @@ class CardViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'])
-    def move(self, request, list_pk=None, pk=None):
+    def move(self, request, **kwargs):
         """Move a card to a new position or different list."""
         card = self.get_object()
         new_position = request.data.get('position', 0)
@@ -453,7 +453,7 @@ class CardViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['post'])
-    def archive(self, request, list_pk=None, pk=None):
+    def archive(self, request, **kwargs):
         """Archive a card."""
         card = self.get_object()
         card.is_archived = True
