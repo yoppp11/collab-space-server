@@ -76,11 +76,7 @@ class DocumentViewSet(viewsets.ModelViewSet):
         # Invalidate cache for immediate display
         CacheManager.invalidate_document_all(str(document.id))
         
-        return Response({
-            'success': True,
-            'data': DocumentSerializer(document).data,
-            'message': 'Document updated successfully'
-        })
+        return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """Delete a document (soft delete)."""

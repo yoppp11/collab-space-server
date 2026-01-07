@@ -72,11 +72,7 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
         # Also invalidate user's workspace list to update workspace name/details
         CacheManager.invalidate_user_workspaces(str(request.user.id))
         
-        return Response({
-            'success': True,
-            'data': WorkspaceSerializer(workspace, context={'request': request}).data,
-            'message': 'Workspace updated successfully'
-        })
+        return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """Delete a workspace (soft delete)."""
@@ -382,11 +378,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         CacheManager.invalidate_workspace_boards(str(board.workspace_id))
         CacheManager.invalidate_board_detail(str(board.id))
         
-        return Response({
-            'success': True,
-            'data': BoardSerializer(board, context={'request': request}).data,
-            'message': 'Board updated successfully'
-        })
+        return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """Delete a board (soft delete)."""
@@ -481,11 +473,7 @@ class BoardListViewSet(viewsets.ModelViewSet):
         # Invalidate cache for immediate display
         CacheManager.invalidate_board_detail(str(board_list.board_id))
         
-        return Response({
-            'success': True,
-            'data': BoardListSerializer(board_list).data,
-            'message': 'List updated successfully'
-        })
+        return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """Delete a board list."""
@@ -548,11 +536,7 @@ class CardViewSet(viewsets.ModelViewSet):
         CacheManager.invalidate_board_cards(str(card.list.board_id), str(card.list.id))
         CacheManager.invalidate_board_detail(str(card.list.board_id))
         
-        return Response({
-            'success': True,
-            'data': CardSerializer(card, context={'request': request}).data,
-            'message': 'Card updated successfully'
-        })
+        return Response(serializer.data)
     
     def destroy(self, request, *args, **kwargs):
         """Delete a card."""
