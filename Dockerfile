@@ -5,6 +5,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings.production
+ENV PORT=8000
 
 # Set work directory
 WORKDIR /app
@@ -28,11 +29,11 @@ COPY . /app/
 # Create necessary directories
 RUN mkdir -p /app/staticfiles /app/media
 
-# Collect static files (will be overridden by volume in dev)
-RUN python manage.py collectstatic --noinput || true
+# Make start script executable
+RUN chmod +x /app/start.sh
 
 # Expose port
 EXPOSE 8000
 
-# Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "config.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+# Default command - use startup script
+CMD ["./start.sh"]
