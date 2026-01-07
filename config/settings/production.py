@@ -16,6 +16,12 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+ALLOWED_HOSTS = [
+    ".up.railway.app",
+    "localhost",
+    "127.0.0.1",
+]
+
 # Production email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.environ.get('EMAIL_HOST')
