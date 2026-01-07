@@ -40,7 +40,21 @@ CSRF_TRUSTED_ORIGINS = [
 # Database - use DATABASE_URL from Railway
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
-    DATABASES['default'] = dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
+else:
+    # Fallback: Check if we have individual PostgreSQL environment variables
+    # This ensures we don't try to connect to localhost in production
+    if not os.environ.get('POSTGRES_HOST'):
+        raise ValueError(
+            'DATABASE_URL or POSTGRES_HOST environment variable must be set in production. '
+            'Please configure your database connection.'
+        )
 
 # Redis Configuration - use REDIS_URL from Railway
 REDIS_URL = os.environ.get('REDIS_URL')
